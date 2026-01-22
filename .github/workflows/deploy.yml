@@ -1,0 +1,38 @@
+name: Build and Deploy Angular
+on:
+  push:
+    branches: [ main ] # Triggers on push to main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install & Build
+        run: |
+          npm install
+          npx ng build --configuration production
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: angular-app
+          path: dist/smartcertify # Adjust to your dist folder name
+
+  deploy-dev:
+    needs: build
+    environment: dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: angular-app
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy to Dev
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'poc-angular-dev'
+          package: .
